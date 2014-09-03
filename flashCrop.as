@@ -8,13 +8,14 @@ package{
 	import flash.net.URLRequest;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+    import flash.events.DataEvent;
 	import flash.net.FileFilter;
 	import flash.net.FileReference;
 	import flash.text.TextField;
+	import flash.external.ExternalInterface;
 	
 	public class FlashCrop extends Sprite{
-		private var existedImgUrl:String = 'http://demo.xwx.cn/uploads/image/b/a4/ba45c8f60456a672e003a875e469d0eb600x0.jpg';
-		//private var existedImgUrl:String = '';
+		private var existedImgUrl:String = stage.loaderInfo.parameters["pic"];
 		private var existedImgUrlObj:URLRequest = new URLRequest(existedImgUrl);
 		private var existedImgLoader:Loader = new Loader();
 		
@@ -23,6 +24,7 @@ package{
 		private var fileLoader:Loader = new Loader();
 		private var fileRef:FileReference = new FileReference();
         private var previewImg:Loader = new Loader();
+        private var drawBitmap:Bitmap;
 
         private var currentImgWidth:Number = 0;
         private var currentImgHeight:Number = 0;
@@ -60,12 +62,15 @@ package{
 		private var moveEndX:Number = 0;
 		private var moveEndY:Number = 0;
 
-		private var uploadUrl:String = '/upload?fileKey=upfile';
+		private var uploadUrl:String = stage.loaderInfo.parameters["url"];
 		
 		private var defaultImg:DefaultImg = new DefaultImg();
 		public function FlashCrop(){
-			addSelectBtn();
+			if (ExternalInterface.available) { 
+				ExternalInterface.call("ASFace.callback");  
+			}
 			
+			addSelectBtn();
 			if(existedImgUrl) {
 				existedImgLoader.contentLoaderInfo.addEventListener(Event.COMPLETE,existedImgLoadedFn);
 				existedImgLoader.load(existedImgUrlObj);
@@ -151,13 +156,12 @@ package{
 
             preBmdClode.copyPixels(preBmd,rect,destPoint);
 
-            var drawBitmap:Bitmap = new Bitmap(preBmdClode);
+            drawBitmap = new Bitmap(preBmdClode);
             drawBitmap.x = 400;
             drawBitmap.y = 0;
             drawBitmap.width = defaultImgWidth;
             drawBitmap.height= defaultImgWidth;
 
-            trace(rect.x,rect.y,rect.width,rect.height);
             addChild(drawBitmap);
         }
         private function addFileLoaderBackground():void {
@@ -230,12 +234,21 @@ package{
 		}
 		private function confirmFn(evt:MouseEvent):void {
 			fileRef.upload(new URLRequest(uploadUrl),'upfile');
+            fileRef.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA,uploadCallback);
 		}
+        private function uploadCallback(evt:DataEvent):void {
+            trace(evt);
+            fileRef.removeEventListener(DataEvent.UPLOAD_COMPLETE_DATA,uploadCallback);
+        }
 		private function cancelFn(evt:MouseEvent):void {
 			fileRef.cancel();
 			confirmBtn.removeEventListener(MouseEvent.CLICK,confirmFn);
 			cancelBtn.removeEventListener(MouseEvent.CLICK,cancelFn);
-			removeChild(fileLoader);
+
+            //fileLoaderBack.removeChild(fileLoader);
+			removeChild(fileLoaderBack);
+            removeChild(maskAll);
+			removeChild(drawBitmap);
 			removeChild(confirmBtn);
 			removeChild(cancelBtn);
 		}
