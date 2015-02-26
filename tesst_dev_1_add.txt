@@ -1,0 +1,7 @@
+now is the time sixteen firty-eight.
+now now now
+Git has a mutable index called stage.
+
+--no--ff --no--ff devdevdev
+
+
